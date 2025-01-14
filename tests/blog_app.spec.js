@@ -1,5 +1,5 @@
 // @ts-check
-const { test, expect, describe, beforeEach } = require('@playwright/test')
+const { test, expect, describe, beforeEach, dialog } = require('@playwright/test')
 const { loginWith } = require('./helper')
 
 
@@ -73,6 +73,28 @@ describe('Blog app', () => {
       await expect(page.getByText('likes 0')).toBeVisible()
       await page.getByRole('button', { name: 'like'}).click()
       await expect(page.getByText('likes 1')).toBeVisible()
+    })
+
+    test('Blog can be deleted', async ({ page }) => {
+      await page.getByRole('button', { name: 'view'}).click()
+      page.on('dialog', async dialog => {
+        expect(dialog.message()).toContain('Remove')
+        await dialog.accept()
+      })
+      await page.getByRole('button', { name: 'delete'}).click()
+      await expect(page.getByText('My new blog Bruno Bloggaaja')).not.toBeVisible()
+      
+    })
+
+    test('Not deleting blog if cancel is pressed when confirming deletion', async ({ page }) => {
+      await page.getByRole('button', { name: 'view'}).click()
+      page.on('dialog', async dialog => {
+        expect(dialog.message()).toContain('Remove')
+        await dialog.dismiss()
+      })
+      await page.getByRole('button', { name: 'delete'}).click()
+      await expect(page.getByText('My new blog Bruno Bloggaaja')).toBeVisible()
+      
     })
   })
 
