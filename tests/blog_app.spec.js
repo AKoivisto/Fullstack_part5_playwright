@@ -2,7 +2,20 @@
 const { test, expect, describe, beforeEach } = require('@playwright/test')
 const { loginWith } = require('./helper')
 
+
+
 describe('Blog app', () => {
+
+  const user = {
+    username: 'terotee',
+    password: 'testero'
+  }
+  
+  const wrongUser = {
+    username: 'terotes',
+    password: 'teropitkamaki'
+  }
+
   beforeEach(async ({ page, request }) => {
     await request.post('http://localhost:3003/api/testing/reset')
     await request.post('http://localhost:3003/api/users', {
@@ -23,15 +36,7 @@ describe('Blog app', () => {
   })
 
   describe('Login', () => {
-    const user = {
-      username: 'terotee',
-      password: 'testero'
-    }
-
-    const wrongUser = {
-      username: 'terotes',
-      password: 'teropitkamaki'
-    }
+    
 
     // Wrong username or password
     test('Successful login', async ({ page }) => {
@@ -46,6 +51,22 @@ describe('Blog app', () => {
       await expect(errorDiv).toContainText('Wrong username or password')
       await expect(page.getByText('Tero Testeri logged in')).not.toBeVisible()
     })
+  })
+
+  describe('When logged in', () => {
+    beforeEach( async ({ page }) => {
+      await loginWith(page, user)
+    })
+
+    test('a new blog can be created', async ({ page }) => {
+      await page.getByRole('button', { name: 'New blog'}).click()
+      await page.getByTestId('title').fill('My new blog')
+      await page.getByTestId('author').fill('Bruno Bloggaaja')
+      await page.getByTestId('url').fill('https://www.brunoblogger.com/blog1')
+      await page.getByRole('button', { name: 'create blog'}).click()
+
+      await expect(page.getByText('My new blog Bruno Bloggaaja')).toBeVisible()
+    }) 
   })
 
  
