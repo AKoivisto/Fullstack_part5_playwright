@@ -1,6 +1,6 @@
 // @ts-check
-const { test, expect, describe, beforeEach, dialog } = require('@playwright/test')
-const { loginWith } = require('./helper')
+const { test, expect, describe, beforeEach } = require('@playwright/test')
+const { loginWith, createBlog } = require('./helper')
 
 
 
@@ -16,6 +16,11 @@ describe('Blog app', () => {
     password: 'teropitkamaki'
   }
 
+  const anotherUser = {
+    username: 'teija',
+    password: 'testeija'
+  }
+
   beforeEach(async ({ page, request }) => {
     await request.post('http://localhost:3003/api/testing/reset')
     await request.post('http://localhost:3003/api/users', {
@@ -23,6 +28,13 @@ describe('Blog app', () => {
         name: 'Tero Testeri',
         username: 'terotee',
         password: 'testero'
+      }
+    })
+    await request.post('http://localhost:3003/api/users', {
+      data: {
+        name: 'Teija Testeri',
+        username: 'teija',
+        password: 'testeija'
       }
 
      
@@ -56,12 +68,7 @@ describe('Blog app', () => {
   describe('When logged in', () => {
     beforeEach( async ({ page }) => {
       await loginWith(page, user)
-
-      await page.getByRole('button', { name: 'New blog'}).click()
-      await page.getByTestId('title').fill('My new blog')
-      await page.getByTestId('author').fill('Bruno Bloggaaja')
-      await page.getByTestId('url').fill('https://www.brunoblogger.com/blog1')
-      await page.getByRole('button', { name: 'create blog'}).click()
+      await createBlog(page, 'My new blog', 'Bruno Bloggaaja', 'https://www.brunoblogger.com/blog1')
     })
 
     test('a new blog can be created', async ({ page }) => {
@@ -98,6 +105,24 @@ describe('Blog app', () => {
     })
   })
 
- 
-})
+  describe('Another user', () => {
+    beforeEach( async ({ page }) => {
+      await loginWith(page, anotherUser)
+  })
 
+  test('Delete-button is only visible to user who added blog', async ({ page }) => {
+
+    await createBlog(page,'Teijan tehonurkkaus', 'Teija Testeri', 'https://www.teijatest.ax/test')
+    await page.getByRole('button', { name: 'view'}).click()
+    await expect(page.getByText('delete blog')).toBeVisible()
+    await page.getByRole('button', { name: 'log out'}).click()
+    await page.reload()
+    await loginWith(page, user)
+    await page.getByRole('button', { name: 'view'}).click() 
+    await expect(page.getByText('delete blog')).not.toBeVisible()
+    await expect(page.getByText('likes 0')).toBeVisible()
+
+    
+  })
+})
+})
