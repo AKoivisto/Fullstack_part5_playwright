@@ -103,6 +103,37 @@ describe('Blog app', () => {
       await expect(page.getByText('My new blog Bruno Bloggaaja')).toBeVisible()
       
     })
+
+    test('Blogs are sorted by likes, in descending order', async ( {page}) => {
+      test.setTimeout(10000)
+
+      await createBlog(page, 'Second blog', 'Tero', 'http://www.toinen.com')
+      await createBlog(page, 'Third blog 3', 'Teija', 'https://ww.teija.ax')
+      await expect(page.getByText('Third blog 3 Teija')).toBeVisible()
+      await expect(page.getByText('Second blog Tero')).toBeVisible()
+      await expect(page.getByText('My new blog Bruno Bloggaaja')).toBeVisible()
+
+      const blog2 = page.locator('text=Second blog Tero').locator('..')
+      await blog2.getByRole('button', { name: 'view'}).click()
+      await blog2.getByRole('button', { name: 'like'}).click()
+      await blog2.getByText('likes 1').waitFor()
+      await blog2.getByRole('button', { name: 'like'}).click()
+      await blog2.getByText('likes 2').waitFor()
+      await expect(blog2.getByText('likes 2')).toBeVisible()
+
+      const blog3 = page.locator('text=third blog 3 Teija').locator('..')
+      await blog3.getByRole('button', { name: 'view'}).click()
+      await blog3.getByRole('button', { name: 'like'}).click()
+      await blog3.getByText('likes 1').waitFor()
+      await expect(blog3.getByText('likes 1')).toBeVisible()
+      await page.waitForTimeout(500)
+      //const blog1 = page.locator('text=My new blog Bruno Bloggaaja').locator('..')
+  
+      await expect(page.locator('.blog').nth(0)).toContainText('Second blog Tero')
+      await expect(page.locator('.blog').nth(1)).toContainText('Third blog 3 Teija')
+      await expect(page.locator('.blog').nth(2)).toContainText('My new blog Bruno Bloggaaja')
+
+    })
   })
 
   describe('Another user', () => {
@@ -122,7 +153,6 @@ describe('Blog app', () => {
     await expect(page.getByText('delete blog')).not.toBeVisible()
     await expect(page.getByText('likes 0')).toBeVisible()
 
-    
   })
 })
 })
